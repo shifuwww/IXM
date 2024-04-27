@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { RT_AUTH_COOKIE_NAME } from './common/const/auth';
+import { RedisClientService } from './core/redis-client/redis-client.service';
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_HOST = '0.0.0.0';
@@ -39,6 +40,9 @@ async function bootstrap() {
     credentials: true,
     origin: '*',
   });
+
+  const redisService = app.get(RedisClientService);
+  await redisService.getClient();
 
   await app.listen(port, host, () =>
     Logger.log(

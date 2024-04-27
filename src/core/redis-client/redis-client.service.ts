@@ -55,10 +55,10 @@ export class RedisClientService {
   }
 
   public async set(key: string, value: string | object, seconds?: number) {
-    value = JSON.stringify(value);
+    const newValue = JSON.stringify(value);
     const client = await this.getClient();
-    if (seconds) await client.set(key, value, 'EX', seconds);
-    else await client.set(key, value);
+    if (seconds) await client.set(key, newValue, 'EX', seconds);
+    else await client.set(key, newValue);
   }
 
   public async get<T>(key: string) {
