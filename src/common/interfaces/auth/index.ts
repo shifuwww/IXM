@@ -35,3 +35,18 @@ export interface ISign {
 }
 
 export interface ISignResponse extends Omit<ISign, 'refreshToken'> {}
+
+export interface IResetPassword {
+  email: string;
+}
+
+export interface ICreateNewPassword {
+  email: string;
+  password: string;
+  token: string;
+}
+
+export interface IResetPasswordData {
+  token: string;
+  timeToSend: number;
+}

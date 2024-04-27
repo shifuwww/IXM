@@ -15,7 +15,7 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { SignInDto, SignUpDto, SignUpRequestDto, SingResponseDto } from './dto';
+import { CreateNewPasswordDto, ResetPasswordDto, SignInDto, SignUpDto, SignUpRequestDto, SingResponseDto } from './dto';
 import { Response, Request } from 'express';
 import { RT_AUTH_COOKIE_NAME } from 'src/common/const/auth';
 import { RtGuard } from './guards';
@@ -100,5 +100,29 @@ export class AuthController {
     const tokens = await this.service.signUp(dto);
     await this.service.setCookie(response, tokens.refreshToken);
     return { accessToken: tokens.accessToken };
+  }
+
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiOperation({ summary: 'Reset password' })
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  public resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<void> {
+    return this.service.resetPassword(resetPasswordDto);
+  }
+
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiOperation({ summary: 'Create new password' })
+  @HttpCode(HttpStatus.OK)
+  @Post('create-new-password')
+  public createNewPassword(
+    @Body() createNewPasswordDto: CreateNewPasswordDto,
+  ): Promise<void> {
+    return this.service.createNewPassword(createNewPasswordDto);
   }
 }

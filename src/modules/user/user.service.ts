@@ -35,4 +35,16 @@ export class UserService {
       throw err;
     }
   }
+
+  public async updateUserPassword(
+    email: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      await this.repository.update({ email }, { password: newPassword });
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
 }
