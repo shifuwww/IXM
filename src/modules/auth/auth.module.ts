@@ -7,6 +7,9 @@ import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
 import { SmtpModule } from 'src/core/smtp/smtp.module';
 import SMTP_CONFIG from 'src/common/configs/smtp.config';
+import { AtStrategy } from './strategies/at.strategy';
+import { RtStrategy } from './strategies/rt.strategy';
+import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
@@ -15,7 +18,7 @@ import SMTP_CONFIG from 'src/common/configs/smtp.config';
     SmtpModule.forRootAsync(SMTP_CONFIG.asProvider()),
     UserModule,
   ],
-  controllers: [],
-  providers: [AuthService],
+  controllers: [AuthController],
+  providers: [AuthService, AtStrategy, RtStrategy],
 })
 export class AuthModule {}

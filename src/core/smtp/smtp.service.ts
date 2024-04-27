@@ -60,13 +60,11 @@ export class SmtpService implements OnModuleInit {
   }
 
   private async send(to: string, template: Result) {
-    if (this.smtpOptions.send === 'true') {
-      this.transport.sendMail({
-        from: `<${this.smtpOptions.from}>`,
-        to,
-        subject: 'Subject',
-        ...template,
-      });
-    }
+    await this.transport.sendMail({
+      from: `<${this.smtpOptions.from}>`,
+      to,
+      subject: 'Subject',
+      ...template,
+    });
   }
 }
