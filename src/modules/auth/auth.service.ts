@@ -1,18 +1,20 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokenEntity } from 'src/entities';
+import { TokenEntity, UserEntity } from 'src/entities';
 import { Repository } from 'typeorm';
 import { UserService } from '../user/user.service';
 import { RedisClientService } from 'src/core/redis-client/redis-client.service';
 import { SmtpService } from 'src/core/smtp/smtp.service';
 import * as crypto from 'crypto';
-import { SignUpDto, SignUpRequestDto } from './dto';
+import { SignInDto, SignUpDto, SignUpRequestDto } from './dto';
 import {
   RT_AUTH_COOKIE_NAME,
   SIGN_UP_TTL_SECONDS,
@@ -36,6 +38,71 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
+  public async refresh(refreshToken: string): Promise<ISign> {
+    try {
+      const payload: IAtJwt = await this.jwtService.verifyAsync(refreshToken);
+
+      const token = await this.repository.findOne({
+        where: { token: refreshToken },
+      });
+
+      if (!token) {
+        throw new ForbiddenException('Access Denied');
+      }
+
+      const [at, rt] = await Promise.all([
+        await this.jwtService.signAsync(payload, {
+          secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
+          expiresIn: `${this.configService.get<string>('JWT_ACCESS_TOKEN_TTL')}s`,
+        }),
+        await this.jwtService.signAsync(payload, {
+          secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+          expiresIn: `${this.configService.get<string>(
+            'JWT_REFRESH_TOKEN_TTL',
+          )}s`,
+        }),
+      ]);
+
+      await this.repository.update({ token: refreshToken }, { token: rt });
+
+      return { accessToken: at, refreshToken: rt };
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  public async signIn(signInDto: SignInDto): Promise<ISign> {
+    const { email, password } = signInDto;
+    try {
+      const user = await this.userService.getUserByEmail(email);
+
+      if (!user) {
+        throw new NotFoundException(`User with email: ${email} does not exist`);
+      }
+
+      const isPasswordMatches = await this.compare(password, user.password);
+
+      if (!isPasswordMatches) {
+        throw new UnauthorizedException('Password or email is incorrect');
+      }
+
+      return await this.getTokens(user);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  public async logout(refreshToken: string): Promise<void> {
+    try {
+      await this.repository.delete({ token: refreshToken });
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
   public async signUp(signUpDto: SignUpDto): Promise<ISign> {
     const { email } = signUpDto;
     try {
@@ -57,12 +124,7 @@ export class AuthService {
       const password = await this.hashPassword(request.password);
 
       const user = await this.userService.createUser({ email, password });
-      const tokens = await this.getTokens(user.id, user.email);
-      const newToken = this.repository.create({
-        user,
-        token: tokens.refreshToken,
-      });
-      await this.repository.save(newToken);
+      const tokens = await this.getTokens(user);
 
       return tokens;
     } catch (err) {
@@ -123,28 +185,34 @@ export class AuthService {
     }
   }
 
-  private async getTokens(userId: string, email: string): Promise<ISign> {
+  private async getTokens(user: UserEntity): Promise<ISign> {
     const jwtPayload: IAtJwt = {
-      sub: userId,
-      email: email,
+      sub: user.id,
+      email: user.email,
     };
-    const [at, rt] = await Promise.all([
-      await this.jwtService.signAsync(jwtPayload, {
-        secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
-        expiresIn: `${this.configService.get<string>('JWT_ACCESS_TOKEN_TTL')}s`,
-      }),
-      await this.jwtService.signAsync(jwtPayload, {
-        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
-        expiresIn: `${this.configService.get<string>(
-          'JWT_REFRESH_TOKEN_TTL',
-        )}s`,
-      }),
-    ]);
 
-    return {
-      accessToken: at,
-      refreshToken: rt,
-    };
+    try {
+      const [at, rt] = await Promise.all([
+        await this.jwtService.signAsync(jwtPayload, {
+          secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
+          expiresIn: `${this.configService.get<string>('JWT_ACCESS_TOKEN_TTL')}s`,
+        }),
+        await this.jwtService.signAsync(jwtPayload, {
+          secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+          expiresIn: `${this.configService.get<string>(
+            'JWT_REFRESH_TOKEN_TTL',
+          )}s`,
+        }),
+      ]);
+
+      return {
+        accessToken: at,
+        refreshToken: rt,
+      };
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
   private async hashPassword(target: string): Promise<string> {
@@ -167,6 +235,14 @@ export class AuthService {
     const _hash = crypto.createHmac('sha256', salt);
     _hash.update(hash);
     return _hash.digest('hex');
+  }
+
+  private async compare(target: string, hash: string): Promise<boolean> {
+    const [salt, storedHash] = hash.split(':');
+
+    const hashOfInput = await this.hashWithSalt(target, salt);
+
+    return hashOfInput === storedHash;
   }
 
   public async setCookie(response: Response, token: string | null) {

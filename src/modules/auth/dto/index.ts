@@ -10,8 +10,29 @@ import {
   ISignUpRequest,
   ISignResponse,
   ISignUp,
+  ISignIn,
 } from 'src/common/interfaces/auth';
 
+export class SignInDto implements ISignIn {
+  @ApiProperty({
+    type: String,
+    description: 'Email of user',
+    default: 'example@gmail.com',
+  })
+  @IsNotEmpty()
+  @IsEmail()
+  @Transform(({ value }: { value: string }) => value.toLowerCase())
+  email: string;
+
+  @ApiProperty({
+    type: String,
+    description: 'Password of user',
+    default: 'Qwerty123!',
+  })
+  @IsNotEmpty()
+  @IsStrongPassword()
+  password: string;
+}
 export class SignUpRequestDto implements ISignUpRequest {
   @ApiProperty({
     type: String,

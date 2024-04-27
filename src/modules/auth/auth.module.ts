@@ -7,9 +7,8 @@ import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
 import { SmtpModule } from 'src/core/smtp/smtp.module';
 import SMTP_CONFIG from 'src/common/configs/smtp.config';
-import { AtStrategy } from './strategies/at.strategy';
-import { RtStrategy } from './strategies/rt.strategy';
 import { AuthController } from './auth.controller';
+import { AtStrategy, RtStrategy } from './strategies';
 
 @Module({
   imports: [
