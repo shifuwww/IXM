@@ -15,7 +15,14 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateNewPasswordDto, ResetPasswordDto, SignInDto, SignUpDto, SignUpRequestDto, SingResponseDto } from './dto';
+import {
+  CreateNewPasswordDto,
+  ResetPasswordDto,
+  SignInDto,
+  SignUpDto,
+  SignUpRequestDto,
+  SingResponseDto,
+} from './dto';
 import { Response, Request } from 'express';
 import { RT_AUTH_COOKIE_NAME } from 'src/common/const/auth';
 import { RtGuard } from './guards';
