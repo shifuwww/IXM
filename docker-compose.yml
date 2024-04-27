@@ -24,7 +24,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    command: sh -c "npm run start:prod"
+    command: sh -c "npm i && npm run start:prod"
     env_file:
       - ./.env
     depends_on:
