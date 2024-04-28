@@ -16,13 +16,13 @@ export class GetUserDto implements IGetUser {
 
   @ApiProperty({
     type: Date,
-    description: 'Date of create',
+    description: 'Date of creation',
   })
   createdAt: Date;
 
   @ApiProperty({
     type: Date,
-    description: 'Date of update',
+    description: 'Date of updating',
   })
   updatedAt: Date;
 }

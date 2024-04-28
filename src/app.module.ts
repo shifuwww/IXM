@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ormConfig } from './common/configs/orm.config';
 import { RedisClientModule } from './core/redis-client/redis-client.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
+import { FileModule } from './modules/file/file.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { AuthModule } from './modules/auth/auth.module';
     TypeOrmModule.forRootAsync(ormConfig),
     RedisClientModule,
     AuthModule,
+    UserModule,
+    FileModule,
   ],
 })
 export class AppModule {}
