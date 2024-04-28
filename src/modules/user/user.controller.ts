@@ -19,14 +19,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+@UseGuards(AtGuard)
+@ApiBearerAuth()
 @ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly service: UserService) {}
 
-  @UseGuards(AtGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Sign up' })
+  @ApiOperation({ summary: 'Get user info' })
   @HttpCode(HttpStatus.OK)
   @ApiResponse({
     status: 200,
